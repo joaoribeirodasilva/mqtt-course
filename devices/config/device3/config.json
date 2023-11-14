@@ -1,0 +1,50 @@
+{
+    "id": "6553989fc35e200d462c3de7",
+    "account": "",
+    "clock": {
+        "interval": 100,
+        "multiplier": 60
+    },
+    "sensors": {
+        "doorOpen": {
+            "chance": 0.05,
+            "maxTime": 5000,
+            "minTime": 5000    
+        },
+        "temperature": {
+            "normal": -10.0,
+            "increase": 0.001,
+            "decrease": 0.001
+        },
+        "humidity": {
+            "normal": 0.3,
+            "increase": 0.002,
+            "decrease": 0.002
+        }
+    },
+    "communication": {
+        "certificates": {
+            "dir": "config/device3/",
+            "root": "ca.key",
+            "crt": "device.crt",
+            "key": "device.key"
+        },
+        "publish": {
+            "host": "localhost",
+            "port": 1883,
+            "topic": "mqttcourse/freezer",
+            "interval": 5000
+        },
+        "consume": {
+            "host": "localhost",
+            "port": 1883,
+            "topic": "mqttcourse/devices/",
+            "interval": 0
+        },
+        "api": {
+            "host": "localhost",
+            "port": 8080,
+            "token": ""
+        }
+    }
+}
