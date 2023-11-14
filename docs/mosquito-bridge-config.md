@@ -1,0 +1,1 @@
+# Configuring Mosquitto High Availability
