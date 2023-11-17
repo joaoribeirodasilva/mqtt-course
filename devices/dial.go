@@ -91,20 +91,26 @@ func (d *Dial) Stop() {
 // and removes the data sent from the array
 func (d *Dial) Publish() error {
 
+	// while we have items in the list
+	// send them to the MQTT Broker
 	for d.statusList.Len() > 0 {
 
+		// get the list first item
 		head := d.statusList.GetHead()
 
+		// transform the list oldest item
+		// into JSON bytes
 		bytes, err := json.Marshal(head)
-
 		if err != nil {
 			return err
 		}
 
+		// publish the item into the MQTT Broker
 		if err = d.broker.Publish(bytes); err != nil {
 			return err
 		}
 
+		// remove the first item from the list
 		d.statusList.Remove(1)
 	}
 

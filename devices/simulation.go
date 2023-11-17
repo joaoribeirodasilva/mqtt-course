@@ -18,13 +18,13 @@ type SensorNumeric struct {
 }
 
 type Simulation struct {
-	conf          *ConfigSensors
+	conf          *Configuration
 	currentStatus Sensors
 	statusList    *DataList
 }
 
 // New simulation creates a new simulation struct
-func NewSimulation(conf *ConfigSensors, list *DataList) *Simulation {
+func NewSimulation(conf *Configuration, list *DataList) *Simulation {
 
 	s := &Simulation{}
 
@@ -36,10 +36,10 @@ func NewSimulation(conf *ConfigSensors, list *DataList) *Simulation {
 	s.currentStatus.door.recordedTime = time.Now()
 	s.currentStatus.door.isOpen = false
 
-	s.currentStatus.temperature.currentValue = conf.Temperature.Normal
+	s.currentStatus.temperature.currentValue = conf.Sensors.Temperature.Normal
 	s.currentStatus.temperature.recordedTime = time.Now()
 
-	s.currentStatus.humidity.currentValue = conf.Humidity.Normal
+	s.currentStatus.humidity.currentValue = conf.Sensors.Humidity.Normal
 	s.currentStatus.humidity.recordedTime = time.Now()
 
 	return s
@@ -66,10 +66,10 @@ func (s *Simulation) door(virtualTime time.Time) {
 
 		// check if the door opens now
 		rnd := rand.Float64()
-		if rnd <= s.conf.DoorOpen.Chance {
+		if rnd <= s.conf.Sensors.DoorOpen.Chance {
 
 			// if the door opens then calculate the amount of time it will remain open
-			randomTimeOpen := rand.Int63n((s.conf.DoorOpen.MaxTime - s.conf.DoorOpen.MinTime) + s.conf.DoorOpen.MinTime)
+			randomTimeOpen := rand.Int63n((s.conf.Sensors.DoorOpen.MaxTime - s.conf.Sensors.DoorOpen.MinTime) + s.conf.Sensors.DoorOpen.MinTime)
 			s.currentStatus.door.closeTime = virtualTime.Add(time.Duration(randomTimeOpen) * time.Millisecond)
 			// set the door to open
 			s.currentStatus.door.isOpen = true
@@ -94,21 +94,21 @@ func (s *Simulation) temperature(virtualTime time.Time) {
 	if s.currentStatus.door.isOpen {
 
 		// if the door is open we must increase the temperature until it's maximum
-		s.currentStatus.temperature.currentValue += s.conf.Temperature.Increase
-		if s.currentStatus.temperature.currentValue > s.conf.Temperature.Max {
+		s.currentStatus.temperature.currentValue += s.conf.Sensors.Temperature.Increase
+		if s.currentStatus.temperature.currentValue > s.conf.Sensors.Temperature.Max {
 
-			s.currentStatus.temperature.currentValue = s.conf.Temperature.Max
+			s.currentStatus.temperature.currentValue = s.conf.Sensors.Temperature.Max
 		}
 
-	} else if s.currentStatus.temperature.currentValue > s.conf.Temperature.Normal {
+	} else if s.currentStatus.temperature.currentValue > s.conf.Sensors.Temperature.Normal {
 
 		// if door is closed and the current temperature is higher that the
 		// normal temperature we need to decrease the temperature until it
 		// reaches the normal temperature
-		s.currentStatus.temperature.currentValue -= s.conf.Temperature.Decrease
-		if s.currentStatus.temperature.currentValue < s.conf.Temperature.Normal {
+		s.currentStatus.temperature.currentValue -= s.conf.Sensors.Temperature.Decrease
+		if s.currentStatus.temperature.currentValue < s.conf.Sensors.Temperature.Normal {
 
-			s.currentStatus.temperature.currentValue = s.conf.Temperature.Normal
+			s.currentStatus.temperature.currentValue = s.conf.Sensors.Temperature.Normal
 		}
 	}
 
@@ -121,21 +121,21 @@ func (s *Simulation) humidity(virtualTime time.Time) {
 	if s.currentStatus.door.isOpen {
 
 		// if the door is open we must increase the humidity until it's maximum
-		s.currentStatus.humidity.currentValue += s.conf.Humidity.Increase
-		if s.currentStatus.humidity.currentValue > s.conf.Humidity.Max {
+		s.currentStatus.humidity.currentValue += s.conf.Sensors.Humidity.Increase
+		if s.currentStatus.humidity.currentValue > s.conf.Sensors.Humidity.Max {
 
-			s.currentStatus.humidity.currentValue = s.conf.Humidity.Max
+			s.currentStatus.humidity.currentValue = s.conf.Sensors.Humidity.Max
 		}
 
-	} else if s.currentStatus.humidity.currentValue > s.conf.Humidity.Normal {
+	} else if s.currentStatus.humidity.currentValue > s.conf.Sensors.Humidity.Normal {
 
 		// if door is closed and the current humidity is higher that the
 		// normal humidity we need to decrease the humidity until it
 		// reaches the normal humidity
-		s.currentStatus.humidity.currentValue -= s.conf.Humidity.Decrease
-		if s.currentStatus.humidity.currentValue < s.conf.Humidity.Normal {
+		s.currentStatus.humidity.currentValue -= s.conf.Sensors.Humidity.Decrease
+		if s.currentStatus.humidity.currentValue < s.conf.Sensors.Humidity.Normal {
 
-			s.currentStatus.humidity.currentValue = s.conf.Humidity.Normal
+			s.currentStatus.humidity.currentValue = s.conf.Sensors.Humidity.Normal
 		}
 	}
 

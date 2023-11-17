@@ -33,24 +33,34 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
+	// Subscribe or unsubscribe functions
+	// TODO:
+
+	// Initialize the simulation list
+	list := NewDataList(conf)
+	list.Read()
+	list.Start()
+
 	// Initialize the simulation structure
-	simulation := NewSimulation(&conf.Sensors)
+	simulation := NewSimulation(conf, list)
 
 	// Start the virtual clock
-	clock := NewVirtualClock(opts, conf, simulation)
+	clock := NewVirtualClock(conf, simulation)
 	clock.Start()
 
-	// subscribe (if set)
-	// read messages in topic
-	// publish messages to topic
-	// wait SIGTERM
+	// Start the communication with MQTT Broker
+	dial := NewDial(conf, list)
+	dial.Start()
 
+	// wait SIGTERM or SIGINT
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	<-sigChan
 
 	// wait for clock to stop
 	clock.Stop()
+	list.Stop()
+	dial.Stop()
 
 	// unsubscribe (if set)
 	// disconnect all communications
