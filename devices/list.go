@@ -49,7 +49,7 @@ func (dl *DataList) Start() error {
 
 	// tries to read the list data from the file
 	if err := dl.Read(); err != nil {
-		fmt.Errorf("WARNING: failed to read data file REASON: %s", err.Error())
+		fmt.Printf("WARNING: failed to read data file REASON: %s", err.Error())
 	}
 
 	// starts it's own thread
@@ -62,7 +62,7 @@ func (dl *DataList) Start() error {
 		for !dl.stopRequested {
 
 			if err := dl.Save(); err != nil {
-				fmt.Errorf("WARNING: failed save data file REASON: %s", err.Error())
+				fmt.Printf("WARNING: failed save data file REASON: %s", err.Error())
 			}
 
 			// sleep until next time to save
@@ -79,7 +79,7 @@ func (dl *DataList) Start() error {
 
 		// save the current DataList array data to the disk
 		if err := dl.Save(); err != nil {
-			fmt.Errorf("ERROR: failed save data file REASON: %s", err.Error())
+			fmt.Printf("ERROR: failed save data file REASON: %s", err.Error())
 		}
 
 		// sets the is dirty flag to false
@@ -101,6 +101,8 @@ func (dl *DataList) Stop() {
 		// sets the stop request to true
 		dl.stopRequested = true
 
+		// sign the channel to true
+		// so we can return
 		done <- !dl.isStarted
 
 		<-done
@@ -110,78 +112,136 @@ func (dl *DataList) Stop() {
 // Append ands a new Sensors struct to the DataList array
 func (dl *DataList) Append(item Sensors) {
 
+	// lock the list so the thread inserting
+	// can have exclusive access
 	dl.mu.Lock()
 
+	//if the list is full
 	if uint32(len(dl.list)) >= dl.conf.Data.MaxMessages {
+
+		// print a warning to the console
 		log.Printf("WARNING: sensor list reached it's limit of %d messages stored", dl.conf.Data.MaxMessages)
+
+		// remove the oldest item from the list
 		dl.list = dl.list[1:]
 	}
 
+	// add the item to the list
 	dl.list = append(dl.list, &item)
+
+	// set is dirty flag to true so
+	// we know there are new items in
+	// the list
 	dl.isDirty = true
 
+	// unlock the exclusive thread access
+	// to the list
 	dl.mu.Unlock()
 }
 
 // Removes n items from the head of the DataList array
 func (dl *DataList) Remove(items int) {
 
+	// lock the list so the thread inserting
+	// can have exclusive access
 	dl.mu.Lock()
 
+	// if the number of items to remove is greater
+	// than the items list
 	if items > len(dl.list) {
+
+		// set the items to remove equal to the
+		// items list length
 		items = len(dl.list)
 	}
 
+	// remove the oldest items from the list
 	dl.list = dl.list[items:]
+
+	// set the flag is dirty to true
 	dl.isDirty = true
 
+	// unlock the exclusive thread access
+	// to the list
 	dl.mu.Unlock()
 }
 
+// GetHead returns a copy of the first list item
 func (dl *DataList) GetHead() *Sensors {
 
+	// lock the list so the thread inserting
+	// can have exclusive access
 	dl.mu.Lock()
+
+	// defer unlock the exclusive thread access
+	// to the list
 	defer dl.mu.Unlock()
+
+	// if the list has no items return
 	if len(dl.list) == 0 {
 		return nil
 	}
 
+	// copy the sensor data item to a new
+	// memory address without deep copy
+	// that is processor intensive
 	s := &Sensors{
 		door:        dl.list[0].door,
 		temperature: dl.list[0].temperature,
 		humidity:    dl.list[0].humidity,
 	}
 
+	// if the door sensor is marked as open
+	// we don't want to send the time the door
+	// is set to close
 	if s.door.isOpen {
 		s.door.closeTime = time.Unix(0, 0)
 	}
 
+	// return the copied list item
 	return s
 }
 
+// Len returns the list size
 func (dl *DataList) Len() int {
 
+	// lock the list so the thread inserting
+	// can have exclusive access
 	dl.mu.Lock()
+
+	// defer unlock the exclusive thread access
+	// to the list
 	defer dl.mu.Unlock()
 
+	// return the length of the list
 	return len(dl.list)
 }
 
 // Save saves the DataList array into a JSON file
 func (dl *DataList) Save() error {
 
+	// lock the list so the thread inserting
+	// can have exclusive access
+	dl.mu.Lock()
+
+	// defer unlock the exclusive thread access
+	// to the list
+	defer dl.mu.Unlock()
+
+	// if there are no changes to the list
+	// return
 	if !dl.isDirty {
 		return nil
 	}
 
-	dl.mu.Lock()
-	defer dl.mu.Unlock()
-
+	// transform the list data into a JSON array
+	// of bytes
 	data, err := json.Marshal(dl.list)
 	if err != nil {
 		return err
 	}
 
+	// write this JSON byte array to a data file
 	err = os.WriteFile(dl.conf.Data.Path, data, os.ModePerm)
 	if err != nil {
 		return err
@@ -193,19 +253,27 @@ func (dl *DataList) Save() error {
 // Reads reads the DataList array from a JSON file
 func (dl *DataList) Read() error {
 
+	// lock the list so the thread inserting
+	// can have exclusive access
 	dl.mu.Lock()
+
+	// defer unlock the exclusive thread access
+	// to the list
 	defer dl.mu.Unlock()
 
+	// read the JSON file into the a byte array
 	bytes, err := os.ReadFile(dl.conf.Data.Path)
 	if err != nil {
 		return err
 	}
 
+	// transform the JSON bytes into a memory list
 	err = json.Unmarshal([]byte(bytes), dl.list)
 	if err != nil {
 		return err
 	}
 
+	// sets the flag is dirty equals to false
 	dl.isDirty = false
 
 	return nil
@@ -213,7 +281,14 @@ func (dl *DataList) Read() error {
 
 func (dl *DataList) IsDirty() bool {
 
+	// lock the list so the thread inserting
+	// can have exclusive access
 	dl.mu.Lock()
+
+	// defer unlock the exclusive thread access
+	// to the list
 	defer dl.mu.Unlock()
+
+	// return the list is dirty flag status
 	return dl.isDirty
 }
