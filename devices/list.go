@@ -10,9 +10,9 @@ import (
 )
 
 type Sensors struct {
-	door        SensorDoor
-	temperature SensorNumeric
-	humidity    SensorNumeric
+	Door        SensorDoor    `json:"door"`
+	Temperature SensorNumeric `json:"temperature"`
+	Humidity    SensorNumeric `json:"humidity"`
 }
 
 type DataList struct {
@@ -186,16 +186,16 @@ func (dl *DataList) GetHead() *Sensors {
 	// memory address without deep copy
 	// that is processor intensive
 	s := &Sensors{
-		door:        dl.list[0].door,
-		temperature: dl.list[0].temperature,
-		humidity:    dl.list[0].humidity,
+		Door:        dl.list[0].Door,
+		Temperature: dl.list[0].Temperature,
+		Humidity:    dl.list[0].Humidity,
 	}
 
 	// if the door sensor is marked as open
 	// we don't want to send the time the door
 	// is set to close
-	if s.door.isOpen {
-		s.door.closeTime = time.Unix(0, 0)
+	if s.Door.isOpen {
+		s.Door.closeTime = time.Unix(0, 0)
 	}
 
 	// return the copied list item

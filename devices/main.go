@@ -59,7 +59,11 @@ func main() {
 
 	// wait for clock to stop
 	clock.Stop()
+
+	// wait for list to stop
 	list.Stop()
+
+	// wait for dial to stop
 	dial.Stop()
 
 	// unsubscribe (if set)
