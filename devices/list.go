@@ -268,7 +268,7 @@ func (dl *DataList) Read() error {
 	}
 
 	// transform the JSON bytes into a memory list
-	err = json.Unmarshal([]byte(bytes), dl.list)
+	err = json.Unmarshal([]byte(bytes), &dl.list)
 	if err != nil {
 		return err
 	}
