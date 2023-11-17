@@ -26,20 +26,27 @@ type ConfigClock struct {
 
 type ConfigSensorDoor struct {
 	Chance  float64 `json:"chance"`
-	MaxTime uint64  `json:"maxTime"`
-	MinTime uint64  `json:"minTime"`
+	MaxTime int64   `json:"maxTime"`
+	MinTime int64   `json:"minTime"`
 }
 
 type ConfigSensorNumeric struct {
 	Normal   float64 `json:"normal"`
 	Increase float64 `json:"increase"`
 	Decrease float64 `json:"decrease"`
+	Max      float64 `json:"max"`
 }
 
 type ConfigSensors struct {
 	DoorOpen    ConfigSensorDoor    `json:"doorOpen"`
 	Temperature ConfigSensorNumeric `json:"temperature"`
 	Humidity    ConfigSensorNumeric `json:"humidity"`
+}
+
+type Data struct {
+	Path         string `json:"path"`
+	SaveInterval int64  `json:"saveInterval"`
+	MaxMessages  uint32 `json:"maxMessages"`
 }
 
 type ConfigCertificates struct {
@@ -54,12 +61,20 @@ type ConfigAuthentication struct {
 	Password string `json:"password"`
 }
 
+type ConfigMQTT struct {
+	Host      string      `json:"host"`
+	Port      int         `json:"port"`
+	Interval  int64       `json:"interval"`
+	Subscribe ConfigTopic `json:"subscribe"`
+	Publish   ConfigTopic `json:"publish"`
+	Login     bool        `json:"login"`
+	Tls       bool        `json:"tls"`
+}
+
 type ConfigTopic struct {
-	Host     string `json:"host"`
-	Port     int    `json:"port"`
-	Topic    string `json:"topic"`
-	Interval uint64 `json:"interval"`
-	Qos      byte   `json:"qos"`
+	Publish bool   `json:"publish"`
+	Topic   string `json:"topic"`
+	Qos     byte   `json:"qos"`
 }
 
 type ConfigApi struct {
@@ -71,8 +86,7 @@ type ConfigApi struct {
 type ConfigCommunications struct {
 	Certificates   ConfigCertificates   `json:"certificates"`
 	Authentication ConfigAuthentication `json:"authentication"`
-	Publish        ConfigTopic          `json:"publish"`
-	Consume        ConfigTopic          `json:"consume"`
+	MQTT           ConfigMQTT           `json:"mqtt"`
 	Api            ConfigApi            `json:"api"`
 }
 
@@ -82,7 +96,9 @@ type Configuration struct {
 	Account        string               `json:"account"`
 	Clock          ConfigClock          `json:"clock"`
 	Sensors        ConfigSensors        `json:"sensors"`
+	Data           Data                 `json:"data"`
 	Communications ConfigCommunications `json:"communications"`
+	Options        *Options             `json:"-"`
 	configPath     string
 }
 
@@ -94,6 +110,7 @@ func NewConfiguration(opts *Options) *Configuration {
 
 	conf := &Configuration{}
 
+	conf.Options = opts
 	conf.device = opts.device
 
 	opts.configFile = defaultConfigPath

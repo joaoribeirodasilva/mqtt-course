@@ -3,19 +3,21 @@ package main
 import "time"
 
 type VirtualClock struct {
-	conf          ConfigClock
+	conf          *Configuration
 	virtualTime   time.Time
 	isStarted     bool
 	stopRequested bool
+	simulation    *Simulation
 }
 
-func NewVirtualClock(conf *Configuration) *VirtualClock {
+func NewVirtualClock(conf *Configuration, simulation *Simulation) *VirtualClock {
 
 	vc := &VirtualClock{}
 
-	vc.conf = conf.Clock
+	vc.conf = conf
 	vc.isStarted = false
 	vc.stopRequested = false
+	vc.simulation = simulation
 
 	return vc
 }
@@ -33,11 +35,10 @@ func (vc *VirtualClock) Start() error {
 
 		for !vc.stopRequested {
 
-			time.Sleep(time.Duration(vc.conf.Interval))
-			vc.virtualTime = vc.virtualTime.Add(time.Duration(vc.conf.Interval*vc.conf.Multiplier) * time.Millisecond)
+			time.Sleep(time.Duration(vc.conf.Clock.Interval))
+			vc.virtualTime = vc.virtualTime.Add(time.Duration(vc.conf.Clock.Interval*vc.conf.Clock.Multiplier) * time.Millisecond)
 
-			// simulate
-			// send data
+			vc.simulation.Simulate(vc.virtualTime)
 
 		}
 

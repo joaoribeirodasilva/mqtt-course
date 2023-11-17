@@ -8,26 +8,18 @@ import (
 )
 
 type MQTTClient struct {
-	clientId       string
-	certificates   *ConfigCertificates
-	authentication *ConfigAuthentication
-	topic          *ConfigTopic
-	mqttClient     mqtt.Client
-	mqttToken      mqtt.Token
-	noTls          bool
-	isConnected    bool
+	conf        *Configuration
+	mqttClient  mqtt.Client
+	mqttToken   mqtt.Token
+	isConnected bool
 }
 
-func NewMQTTClient(opts *Options, id string, certificates *ConfigCertificates, authentication *ConfigAuthentication, topic *ConfigTopic) *MQTTClient {
+func NewMQTTClient(conf *Configuration) *MQTTClient {
 
 	c := &MQTTClient{}
 
-	c.noTls = opts.noTls
-	c.certificates = certificates
-	c.authentication = authentication
-	c.topic = topic
+	c.conf = conf
 	c.isConnected = false
-	c.clientId = id
 
 	return c
 }
@@ -39,7 +31,7 @@ func (c *MQTTClient) Connect() error {
 		return nil
 	}
 
-	brokerUrl := fmt.Sprintf("tcp://%s:%d", c.topic.Host, c.topic.Port)
+	brokerUrl := fmt.Sprintf("tcp://%s:%d", c.conf.Communications.MQTT.Host, c.conf.Communications.MQTT.Port)
 
 	log.Printf("connecting to MQTT broker at %s ...", brokerUrl)
 
@@ -47,17 +39,21 @@ func (c *MQTTClient) Connect() error {
 
 	options.AddBroker(brokerUrl)
 
-	options.SetClientID(c.clientId)
+	options.SetClientID(c.conf.ID)
 	options.SetDefaultPublishHandler(c.onMessagePublishedHandler)
 
 	options.OnConnect = c.onConnectHandler
 	options.OnConnectionLost = c.onConnectLostHandler
 
-	if c.authentication.Username != "" && c.authentication.Password != "" {
+	if c.conf.Communications.MQTT.Login {
 
-		options.SetUsername(c.authentication.Username)
-		options.SetPassword(c.authentication.Password)
+		options.SetUsername(c.conf.Communications.Authentication.Username)
+		options.SetPassword(c.conf.Communications.Authentication.Password)
 	}
+
+	options.SetCleanSession(c.conf.Options.subscribe)
+
+	// Add tls code
 
 	c.mqttClient = mqtt.NewClient(options)
 
@@ -81,9 +77,9 @@ func (c *MQTTClient) Subscribe() error {
 		}
 	}
 
-	log.Printf("subscribing MQTT topic %s with QOS %d ...", c.topic.Topic, c.topic.Qos)
+	log.Printf("subscribing MQTT topic %s with QOS %d ...", c.conf.Communications.MQTT.Subscribe.Topic, c.conf.Communications.MQTT.Subscribe.Qos)
 
-	if c.mqttToken = c.mqttClient.Subscribe(c.topic.Topic, c.topic.Qos, c.onMessageReceived); c.mqttToken.Wait() && c.mqttToken.Error() != nil {
+	if c.mqttToken = c.mqttClient.Subscribe(c.conf.Communications.MQTT.Subscribe.Topic, c.conf.Communications.MQTT.Subscribe.Qos, c.onMessageReceived); c.mqttToken.Wait() && c.mqttToken.Error() != nil {
 
 		return c.mqttToken.Error()
 	}
@@ -103,9 +99,9 @@ func (c *MQTTClient) Unsubscribe() error {
 		}
 	}
 
-	log.Printf("unsubscribing from MQTT topic %s  ...", c.topic.Topic)
+	log.Printf("unsubscribing from MQTT topic %s  ...", c.conf.Communications.MQTT.Subscribe.Topic)
 
-	if c.mqttToken = c.mqttClient.Unsubscribe(c.topic.Topic); c.mqttToken.Wait() && c.mqttToken.Error() != nil {
+	if c.mqttToken = c.mqttClient.Unsubscribe(c.conf.Communications.MQTT.Subscribe.Topic); c.mqttToken.Wait() && c.mqttToken.Error() != nil {
 
 		return c.mqttToken.Error()
 	}
@@ -115,7 +111,7 @@ func (c *MQTTClient) Unsubscribe() error {
 	return nil
 }
 
-func (c *MQTTClient) Publish(data []byte) error { // change data for the list of stored metrics
+func (c *MQTTClient) Publish(data []byte) error {
 
 	if !c.isConnected {
 
@@ -127,9 +123,9 @@ func (c *MQTTClient) Publish(data []byte) error { // change data for the list of
 
 	// Get the list of stored metrics
 
-	log.Printf("publishing MQTT message into topic %s with QOS %d ...", c.topic.Topic, c.topic.Qos)
+	log.Printf("publishing MQTT message into topic %s with QOS %d ...", c.conf.Communications.MQTT.Publish.Topic, c.conf.Communications.MQTT.Publish.Qos)
 
-	if c.mqttToken = c.mqttClient.Publish(c.topic.Topic, c.topic.Qos, false, data); c.mqttToken.Wait() && c.mqttToken.Error() != nil {
+	if c.mqttToken = c.mqttClient.Publish(c.conf.Communications.MQTT.Publish.Topic, c.conf.Communications.MQTT.Publish.Qos, false, data); c.mqttToken.Wait() && c.mqttToken.Error() != nil {
 
 		return c.mqttToken.Error()
 	}

@@ -9,18 +9,25 @@
         "doorOpen": {
             "chance": 0.05,
             "maxTime": 5000,
-            "minTime": 5000    
+            "minTime": 500    
         },
         "temperature": {
             "normal": -10.0,
             "increase": 0.001,
-            "decrease": 0.001
+            "decrease": 0.001,
+            "max": 20.0
         },
         "humidity": {
-            "normal": 0.3,
+            "normal": 0.25,
             "increase": 0.002,
-            "decrease": 0.002
+            "decrease": 0.002,
+            "max": 0.4
         }
+    },
+    "data": {
+        "path": "data/device1",
+        "saveInterval": 1000,
+        "maxMessages": 1000
     },
     "communication": {
         "certificates": {
@@ -33,19 +40,20 @@
             "username": "",
             "password": ""
         },
-        "publish": {
+        "mqtt": {
             "host": "localhost",
             "port": 1883,
-            "topic": "mqttcourse/freezer",
-            "qos": 2,
-            "interval": 5000
-        },
-        "consume": {
-            "host": "localhost",
-            "port": 1883,
-            "topic": "mqttcourse/devices/",
-            "qos": 2,
-            "interval": 100
+            "login": false,
+            "tls": false,        
+            "interval": 1000,
+            "publish": {
+                "topic": "mqttcourse/freezer",
+                "qos": 2
+            },
+            "subscribe": {
+                "topic": "mqttcourse/devices/",
+                "qos": 2
+            }
         },
         "api": {
             "host": "localhost",

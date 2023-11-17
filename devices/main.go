@@ -33,9 +33,11 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	// connect to MQTT
+	// Initialize the simulation structure
+	simulation := NewSimulation(&conf.Sensors)
 
-	clock := NewVirtualClock(conf)
+	// Start the virtual clock
+	clock := NewVirtualClock(opts, conf, simulation)
 	clock.Start()
 
 	// subscribe (if set)
