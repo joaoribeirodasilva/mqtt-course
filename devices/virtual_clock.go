@@ -1,6 +1,9 @@
 package main
 
-import "time"
+import (
+	"log"
+	"time"
+)
 
 type VirtualClock struct {
 	conf          *Configuration
@@ -8,6 +11,7 @@ type VirtualClock struct {
 	isStarted     bool
 	stopRequested bool
 	simulation    *Simulation
+	finished      chan bool
 }
 
 func NewVirtualClock(conf *Configuration, simulation *Simulation) *VirtualClock {
@@ -29,21 +33,33 @@ func (vc *VirtualClock) Start() error {
 		return nil
 	}
 
+	// make/remake the finished channel
+	vc.finished = make(chan bool, 1)
+
 	go func() {
+
+		log.Println("INFO: [VIRTUAL CLOCK] virtual clock started")
 
 		vc.virtualTime = time.Now()
 
 		for !vc.stopRequested {
 
-			time.Sleep(time.Duration(vc.conf.Clock.Interval))
-			vc.virtualTime = vc.virtualTime.Add(time.Duration(vc.conf.Clock.Interval*vc.conf.Clock.Multiplier) * time.Millisecond)
+			if !SleepChannel(time.Duration(vc.conf.Clock.Interval) * time.Millisecond) {
+				break
+			}
 
+			vc.virtualTime = vc.virtualTime.Add(time.Duration(vc.conf.Clock.Interval*vc.conf.Clock.Multiplier) * time.Millisecond)
 			vc.simulation.Simulate(vc.virtualTime)
 
 		}
 
+		log.Println("INFO: [VIRTUAL CLOCK] virtual clock requested ro stop")
 		vc.isStarted = false
 		vc.stopRequested = false
+
+		// set the channel so the Stop function can stop waiting
+		// for loop termination
+		vc.finished <- true
 	}()
 
 	return nil
@@ -54,13 +70,13 @@ func (vc *VirtualClock) Stop() {
 
 	if vc.isStarted {
 
-		done := make(chan bool)
+		log.Println("INFO: [VIRTUAL CLOCK] virtual clock stop requested")
 
 		vc.stopRequested = true
 
-		done <- !vc.isStarted
+		<-vc.finished
 
-		<-done
+		log.Println("INFO: [VIRTUAL CLOCK] virtual clock stopped... waiting")
 	}
 }
 

@@ -2,34 +2,34 @@
     "id": "655398410f3b5d4e935837a7",
     "account": "",
     "clock": {
-        "interval": 100,
+        "interval": 1000,
         "multiplier": 60
     },
     "sensors": {
         "doorOpen": {
             "chance": 0.05,
-            "maxTime": 5000,
-            "minTime": 500    
+            "maxTime": 300000,
+            "minTime": 6000    
         },
         "temperature": {
             "normal": -10.0,
-            "increase": 0.001,
-            "decrease": 0.001,
+            "increase": 0.01,
+            "decrease": 0.01,
             "max": 20.0
         },
         "humidity": {
             "normal": 0.25,
-            "increase": 0.002,
-            "decrease": 0.002,
+            "increase": 0.02,
+            "decrease": 0.02,
             "max": 0.4
         }
     },
     "data": {
-        "path": "data/device1",
+        "path": "data/device1/data.json",
         "saveInterval": 1000,
         "maxMessages": 1000
     },
-    "communication": {
+    "communications": {
         "certificates": {
             "dir": "config/device1/",
             "root": "ca.key",
@@ -45,7 +45,7 @@
             "port": 1883,
             "login": false,
             "tls": false,        
-            "interval": 1000,
+            "interval": 10000,
             "publish": {
                 "topic": "mqttcourse/freezer",
                 "qos": 2

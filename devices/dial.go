@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"time"
 )
 
@@ -11,6 +12,7 @@ type Dial struct {
 	statusList    *DataList
 	isStarted     bool
 	stopRequested bool
+	finished      chan bool
 }
 
 // NewDial create a new Dial struct pointer
@@ -35,27 +37,30 @@ func (d *Dial) Start() error {
 		return nil
 	}
 
+	d.finished = make(chan bool, 1)
+
 	go func() {
+
+		log.Println("INFO: [DIAL] MQTT dial started")
 
 		d.isStarted = true
 
 		for !d.stopRequested {
 
-			if !d.statusList.IsDirty() {
-				continue
+			if d.statusList.IsDirty() {
+				if err := d.broker.Connect(); err == nil {
+					d.broker.Subscribe()
+					d.Publish()
+					d.broker.Disconnect()
+				}
 			}
 
-			if err := d.broker.Connect(); err != nil {
-				continue
+			if !SleepChannel(time.Duration(d.conf.Communications.MQTT.Interval) * time.Millisecond) {
+				break
 			}
-
-			d.broker.Subscribe()
-			d.Publish()
-			d.broker.Disconnect()
-
-			time.Sleep(time.Duration(d.conf.Communications.MQTT.Interval) * time.Millisecond)
-
 		}
+
+		log.Println("INFO: [DIAL] MQTT dial stopping")
 
 		if err := d.broker.Connect(); err == nil {
 			d.Publish()
@@ -67,6 +72,8 @@ func (d *Dial) Start() error {
 
 		d.isStarted = false
 		d.stopRequested = false
+
+		d.finished <- true
 	}()
 
 	return nil
@@ -77,19 +84,23 @@ func (d *Dial) Stop() {
 
 	if d.isStarted {
 
-		done := make(chan bool)
+		log.Println("INFO: [DIAL] MQTT dial requested to stop... waiting")
 
 		d.stopRequested = true
 
-		done <- !d.isStarted
+		<-d.finished
 
-		<-done
+		log.Println("INFO: [DIAL] MQTT dial stopped")
 	}
 }
 
 // Publish publishes the DataList struct array to the MQTT Broker
 // and removes the data sent from the array
 func (d *Dial) Publish() error {
+
+	// store how many messages were publish
+	// to the MQTT Broker
+	messageCount := 0
 
 	// while we have items in the list
 	// send them to the MQTT Broker
@@ -112,7 +123,10 @@ func (d *Dial) Publish() error {
 
 		// remove the first item from the list
 		d.statusList.Remove(1)
+		messageCount++
 	}
+
+	log.Printf("INFO: [DIAL] published %d messages", messageCount)
 
 	return nil
 }

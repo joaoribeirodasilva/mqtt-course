@@ -34,7 +34,32 @@ func main() {
 	}
 
 	// Subscribe or unsubscribe functions
-	// TODO:
+	if conf.Options.subscribe || conf.Options.unsubscribe {
+
+		exitStatus := 0
+
+		client := NewMQTTClient(conf)
+		if err := client.Connect(); err != nil {
+
+			exitStatus = 1
+		}
+		if conf.Options.subscribe && exitStatus == 0 {
+
+			if err := client.Subscribe(); err != nil {
+
+				exitStatus = 1
+			}
+		}
+		if conf.Options.unsubscribe && exitStatus == 0 {
+
+			if err := client.Unsubscribe(); err != nil {
+
+				exitStatus = 1
+			}
+		}
+		client.Disconnect()
+		os.Exit(exitStatus)
+	}
 
 	// Initialize the simulation list
 	list := NewDataList(conf)
@@ -66,22 +91,19 @@ func main() {
 	// wait for dial to stop
 	dial.Stop()
 
-	// unsubscribe (if set)
-	// disconnect all communications
-
 }
 
 func cmdOptions() *Options {
 
 	opts := &Options{}
 
-	flag.StringVar(&opts.configFile, "-c", "", "configuration file path")
-	flag.IntVar(&opts.device, "-d", 0, "device number [1-3]")
-	flag.BoolVar(&opts.help, "-h", false, "help")
-	flag.BoolVar(&opts.noTls, "--no-tls", false, "don't use tls certificates")
-	flag.IntVar(&opts.qos, "-q", 2, "MQTT QOS level")
-	flag.BoolVar(&opts.subscribe, "-s", false, "should subscribe topic on startup")
-	flag.BoolVar(&opts.unsubscribe, "-u", false, "should unsubscribe topic on startup")
+	flag.StringVar(&opts.configFile, "c", "", "configuration file path")
+	flag.IntVar(&opts.device, "d", 0, "device number [1-3]")
+	flag.BoolVar(&opts.help, "h", false, "help")
+	flag.BoolVar(&opts.noTls, "no-tls", false, "don't use tls certificates")
+	flag.IntVar(&opts.qos, "q", 2, "MQTT QOS level")
+	flag.BoolVar(&opts.subscribe, "s", false, "should subscribe topic on startup")
+	flag.BoolVar(&opts.unsubscribe, "u", false, "should unsubscribe topic on startup")
 
 	flag.Parse()
 

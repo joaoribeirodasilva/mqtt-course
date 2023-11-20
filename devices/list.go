@@ -22,6 +22,7 @@ type DataList struct {
 	isStarted     bool
 	stopRequested bool
 	isDirty       bool
+	finished      chan bool
 }
 
 // NewDataList creates a new thread safe and auto save list pointer
@@ -29,7 +30,7 @@ func NewDataList(conf *Configuration) *DataList {
 
 	dl := &DataList{}
 	dl.conf = conf
-	dl.list = make([]*Sensors, 1)
+	dl.list = make([]*Sensors, 0)
 	dl.isStarted = false
 	dl.stopRequested = false
 	dl.isDirty = false
@@ -47,14 +48,18 @@ func (dl *DataList) Start() error {
 		return nil
 	}
 
+	// make/remake the finished channel
+	dl.finished = make(chan bool, 1)
+
 	// tries to read the list data from the file
 	if err := dl.Read(); err != nil {
-		fmt.Printf("WARNING: failed to read data file REASON: %s", err.Error())
+		fmt.Printf("WARNING: [LIST] failed to read data file REASON: %s\n", err.Error())
 	}
 
 	// starts it's own thread
 	go func() {
 
+		log.Println("INFO: [LIST] data list started")
 		// flags it's started
 		dl.isStarted = true
 
@@ -62,14 +67,17 @@ func (dl *DataList) Start() error {
 		for !dl.stopRequested {
 
 			if err := dl.Save(); err != nil {
-				fmt.Printf("WARNING: failed save data file REASON: %s", err.Error())
+				fmt.Printf("WARNING: [LIST] failed save data file REASON: %s\n", err.Error())
 			}
 
-			// sleep until next time to save
-			time.Sleep(time.Duration(dl.conf.Data.SaveInterval) * time.Millisecond)
+			if !SleepChannel(time.Duration(dl.conf.Data.SaveInterval) * time.Millisecond) {
+				break
+			}
 
+			log.Printf("INFO: [LIST] buffer has %d messages stored\n", dl.Len())
 		}
 
+		log.Println("INFO: [LIST] data list stopping")
 		// here the stop request flag was set
 		// flag it as not started
 		dl.isStarted = false
@@ -79,11 +87,15 @@ func (dl *DataList) Start() error {
 
 		// save the current DataList array data to the disk
 		if err := dl.Save(); err != nil {
-			fmt.Printf("ERROR: failed save data file REASON: %s", err.Error())
+			fmt.Printf("ERROR: [LIST] failed save data file REASON: %s", err.Error())
 		}
 
 		// sets the is dirty flag to false
 		dl.isDirty = false
+
+		// set the channel so the Stop function can stop waiting
+		// for loop termination
+		dl.finished <- true
 	}()
 
 	return nil
@@ -95,17 +107,17 @@ func (dl *DataList) Stop() {
 	// if it's started
 	if dl.isStarted {
 
+		log.Println("INFO: [LIST] data list stop requested... waiting")
+
 		// create a channel to wait for the thread to terminate
-		done := make(chan bool)
 
 		// sets the stop request to true
 		dl.stopRequested = true
 
-		// sign the channel to true
-		// so we can return
-		done <- !dl.isStarted
+		// return when it's finished
+		<-dl.finished
 
-		<-done
+		log.Println("INFO: [LIST] data list stopped")
 	}
 }
 
@@ -120,7 +132,7 @@ func (dl *DataList) Append(item Sensors) {
 	if uint32(len(dl.list)) >= dl.conf.Data.MaxMessages {
 
 		// print a warning to the console
-		log.Printf("WARNING: sensor list reached it's limit of %d messages stored", dl.conf.Data.MaxMessages)
+		//log.Printf("WARNING: sensor list reached it's limit of %d messages stored", dl.conf.Data.MaxMessages)
 
 		// remove the oldest item from the list
 		dl.list = dl.list[1:]
@@ -194,8 +206,8 @@ func (dl *DataList) GetHead() *Sensors {
 	// if the door sensor is marked as open
 	// we don't want to send the time the door
 	// is set to close
-	if s.Door.isOpen {
-		s.Door.closeTime = time.Unix(0, 0)
+	if s.Door.IsOpen {
+		s.Door.CloseTime = nil
 	}
 
 	// return the copied list item
@@ -241,6 +253,8 @@ func (dl *DataList) Save() error {
 		return err
 	}
 
+	log.Printf("INFO: [LIST] saving data to file")
+
 	// write this JSON byte array to a data file
 	err = os.WriteFile(dl.conf.Data.Path, data, os.ModePerm)
 	if err != nil {
@@ -260,6 +274,8 @@ func (dl *DataList) Read() error {
 	// defer unlock the exclusive thread access
 	// to the list
 	defer dl.mu.Unlock()
+
+	log.Printf("INFO: [LIST] saving data from file")
 
 	// read the JSON file into the a byte array
 	bytes, err := os.ReadFile(dl.conf.Data.Path)

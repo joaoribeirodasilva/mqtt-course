@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
+	"strings"
 )
 
 // ConfigClock holds the information to set the virtual clock.
@@ -113,7 +115,9 @@ func NewConfiguration(opts *Options) *Configuration {
 	conf.Options = opts
 	conf.device = opts.device
 
-	opts.configFile = defaultConfigPath
+	strDevice := fmt.Sprintf("%d", conf.device)
+
+	opts.configFile = strings.Replace(defaultConfigPath, ":num", strDevice, 1)
 	if opts.configFile != "" {
 		conf.configPath = opts.configFile
 	}
@@ -122,6 +126,8 @@ func NewConfiguration(opts *Options) *Configuration {
 }
 
 func (conf *Configuration) Read() error {
+
+	log.Println("INFO: [CONFIGURATION] reading client configuration")
 
 	file, err := os.ReadFile(conf.configPath)
 	if err != nil {
@@ -137,6 +143,8 @@ func (conf *Configuration) Read() error {
 }
 
 func (conf *Configuration) Write() error {
+
+	log.Println("INFO: [CONFIGURATION] writing client configuration")
 
 	data, err := json.Marshal(conf)
 	if err != nil {
