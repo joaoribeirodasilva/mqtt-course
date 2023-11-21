@@ -3,7 +3,10 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"syscall"
 	"time"
+
+	"github.com/joaoribeirodasilva/wait_signals"
 )
 
 type Dial struct {
@@ -55,7 +58,7 @@ func (d *Dial) Start() error {
 				}
 			}
 
-			if !SleepChannel(time.Duration(d.conf.Communications.MQTT.Interval) * time.Millisecond) {
+			if sig := wait_signals.SleepWait(time.Duration(d.conf.Communications.MQTT.Interval)*time.Millisecond, syscall.SIGINT, syscall.SIGTERM); sig != nil {
 				break
 			}
 		}

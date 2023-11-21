@@ -2,7 +2,10 @@ package main
 
 import (
 	"log"
+	"syscall"
 	"time"
+
+	"github.com/joaoribeirodasilva/wait_signals"
 )
 
 type VirtualClock struct {
@@ -44,7 +47,7 @@ func (vc *VirtualClock) Start() error {
 
 		for !vc.stopRequested {
 
-			if !SleepChannel(time.Duration(vc.conf.Clock.Interval) * time.Millisecond) {
+			if sig := wait_signals.SleepWait(time.Duration(vc.conf.Clock.Interval)*time.Millisecond, syscall.SIGINT, syscall.SIGTERM); sig != nil {
 				break
 			}
 

@@ -6,7 +6,10 @@ import (
 	"log"
 	"os"
 	"sync"
+	"syscall"
 	"time"
+
+	"github.com/joaoribeirodasilva/wait_signals"
 )
 
 type Sensors struct {
@@ -70,7 +73,7 @@ func (dl *DataList) Start() error {
 				fmt.Printf("WARNING: [LIST] failed save data file REASON: %s\n", err.Error())
 			}
 
-			if !SleepChannel(time.Duration(dl.conf.Data.SaveInterval) * time.Millisecond) {
+			if sig := wait_signals.SleepWait(time.Duration(dl.conf.Data.SaveInterval)*time.Millisecond, syscall.SIGINT, syscall.SIGTERM); sig != nil {
 				break
 			}
 
