@@ -5,6 +5,7 @@ type Topic struct {
 	Qos        byte   `json:"qos"`
 	Retain     bool   `json:"retain"`
 	Subscribed bool   `json:"subscribed"`
+	Disabled   bool   `json:"subscribed"`
 }
 
 type TopicsMap struct {

@@ -42,11 +42,15 @@
         "port": 1883,       
         "publish": {
             "topic": "mqttcourse/devices/",
-            "qos": 2
+            "qos": 2,
+            "retain": false,
+            "disabled": false
         },
         "subscribe": {
             "topic": "mqttcourse/freezer",
-            "qos": 2
+            "qos": 2,
+            "retain": false,
+            "disabled": false            
         },
         "tls": {
             "use": false,
