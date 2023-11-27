@@ -1,10 +1,10 @@
 {
     "mongodb": {
-        "clientId": "consumer",
+        "clientId": "consumer1",
         "uri": "mongodb://localhost:27017",
         "database": "mqttcourse",
-        "username": "",
-        "password": "",
+        "username": "root",
+        "password": "53cr37",
         "timeoutMS": 0,
         "connectTimeoutMS": 30000,
         "maxPoolSize": 100,
@@ -35,34 +35,10 @@
             "readPreference": "primaryPreferred"
         },
         "directConnection": false
-    },
-    "mqtt": {
-        "clientId": "consumer",
-        "host": "localhost",
-        "port": 1883,       
-        "publish": {
-            "topic": "mqttcourse/devices/",
-            "qos": 2,
-            "retain": false,
-            "disabled": false
-        },
-        "subscribe": {
-            "topic": "mqttcourse/freezer",
-            "qos": 2,
-            "retain": false,
-            "disabled": false            
-        },
-        "tls": {
-            "use": false,
-            "insecure": true,
-            "root": "config/root.key",
-            "crt": "config/mqtt.crt",
-            "key": "config/mqtt.key"
-        },
-        "authentication": {
-            "use": false,
-            "username": "",
-            "password": ""
-        }        
+    },    
+    "server": {
+        "address": "",
+        "port": 8088,
+        "jwtKey": "53cr37"
     }
 }

@@ -1,9 +1,8 @@
-package main
+package configuration
 
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 )
 
@@ -52,61 +51,37 @@ type MongoConf struct {
 	DirectConnection         bool                    `json:"directConnection"`
 }
 
-type TopicConf struct {
-	Topic string `json:"topic"`
-	Qos   byte   `json:"qos"`
-}
-
-type AuthConf struct {
-	Use      bool   `json:"use"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-type MQTTConf struct {
-	ClientID       string    `json:"clientId"`
-	Host           string    `json:"host"`
-	Port           int       `json:"port"`
-	Interval       int64     `json:"interval"`
-	Publish        TopicConf `json:"publish"`
-	Subscribe      TopicConf `json:"subscribe"`
-	Authentication AuthConf  `json:"authentication"`
-	Tls            TLSConf   `json:"tls"`
+type ServerConf struct {
+	Address string `json:"address"`
+	Port    int    `json:"port"`
+	JwtKey  string `json:"jwtKey"`
 }
 
 type Configuration struct {
-	Options  *Options  `json:"-"`
-	ClientID string    `json:"clientId"`
-	Mongo    MongoConf `json:"mongodb"`
-	MQTT     MQTTConf  `json:"mqtt"`
+	Mongo  MongoConf  `json:"mongodb"`
+	Server ServerConf `json:"server"`
 }
 
 const (
-	defaultConfigPath = "config/consumer%d/config.json"
+	defaultConfigurationfile = "./config/config.json"
 )
 
-func NewConfiguration(opts *Options) *Configuration {
+func NewConfiguration() *Configuration {
 
 	c := &Configuration{}
-	c.Options = opts
 
 	return c
 }
 
 func (c *Configuration) Read() error {
 
-	log.Println("INFO: [CONFIGURATION] reading configuration")
-
-	fileName := fmt.Sprintf(defaultConfigPath, c.Options.consumer)
-
-	file, err := os.ReadFile(fileName)
+	jsonBytes, err := os.ReadFile(defaultConfigurationfile)
 	if err != nil {
-		return fmt.Errorf("ERROR: [CONFIGURATION] failed to read configuration file: %s REASON: %s", fileName, err.Error())
+		return fmt.Errorf("ERROR: [CONFIGURATION] failed to read config file %s", defaultConfigurationfile)
 	}
 
-	err = json.Unmarshal([]byte(file), c)
-	if err != nil {
-		return fmt.Errorf("ERROR: [CONFIGURATION] failed to parse configuration file: %s REASON: %s", fileName, err.Error())
+	if err := json.Unmarshal(jsonBytes, c); err != nil {
+		return fmt.Errorf("ERROR: [CONFIGURATION] decoding configuration file %s", defaultConfigurationfile)
 	}
 
 	return nil

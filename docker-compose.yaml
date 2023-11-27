@@ -1,0 +1,20 @@
+version: '3'
+services:
+  mongodb:
+    image: mongodb/mongodb-community-server:6.0-ubi8
+    environment:
+      MONGODB_INITDB_ROOT_USERNAME: root
+      MONGODB_INITDB_ROOT_PASSWORD: 53cr37
+    volumes:
+      - /home/joao/Programing/Go/src/github.com/joaoribeirodasilva/mqtt-course/services/mongodb/data:/data/db
+    ports:
+      - "27017:27017"
+  mosquitto:
+    image: eclipse-mosquitto
+    volumes:
+      - /home/joao/Programing/Go/src/github.com/joaoribeirodasilva/mqtt-course/services/mosquitto/etc/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - /home/joao/Programing/Go/src/github.com/joaoribeirodasilva/mqtt-course/services/mosquitto/data:/mosquitto/data
+      - /home/joao/Programing/Go/src/github.com/joaoribeirodasilva/mqtt-course/services/mosquitto/log:/mosquitto/log
+    ports:
+      - "1883:1883"
+      - "9001:9001"

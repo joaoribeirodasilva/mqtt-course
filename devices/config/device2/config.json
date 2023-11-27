@@ -1,50 +1,65 @@
 {
-    "id": "655398935cd449795afd59c9",
-    "account": "",
     "clock": {
-        "interval": 100,
+        "interval": 1000,
         "multiplier": 60
     },
     "sensors": {
         "doorOpen": {
             "chance": 0.05,
-            "maxTime": 5000,
-            "minTime": 5000    
+            "maxTime": 300000,
+            "minTime": 6000    
         },
         "temperature": {
             "normal": -10.0,
-            "increase": 0.001,
-            "decrease": 0.001
+            "increase": 0.01,
+            "decrease": 0.01,
+            "max": 20.0
         },
         "humidity": {
-            "normal": 0.3,
-            "increase": 0.002,
-            "decrease": 0.002
+            "normal": 0.25,
+            "increase": 0.02,
+            "decrease": 0.02,
+            "max": 0.4
         }
     },
-    "communication": {
-        "certificates": {
-            "dir": "config/device2/",
-            "root": "ca.key",
-            "crt": "device.crt",
-            "key": "device.key"
-        },
+    "data": {
+        "path": "data/device2/data.json",
+        "saveInterval": 1000,
+        "maxMessages": 1000
+    },
+    "mqtt": {
+        "clientId": "655398935cd449795afd59c9",
+        "host": "localhost",
+        "port": 1883,
+        "interval": 1000,       
         "publish": {
-            "host": "localhost",
-            "port": 1883,
             "topic": "mqttcourse/freezer",
-            "interval": 5000
+            "qos": 2,
+            "retain": false,
+            "disabled": false            
         },
-        "consume": {
-            "host": "localhost",
-            "port": 1883,
-            "topic": "mqttcourse/devices/:id",
-            "interval": 0
+        "subscribe": {
+            "topic": "mqttcourse/devices/2",
+            "qos": 2,
+            "retain": false,
+            "disabled": false
         },
-        "api": {
-            "host": "localhost",
-            "port": 8080,
-            "token": ""
-        }
-    } 
+        "tls": {
+            "use": false,
+            "insecure": true,
+            "root": "config/root.key",
+            "crt": "config/mqtt.crt",
+            "key": "config/mqtt.key"
+        },
+        "authentication": {
+            "use": true,
+            "username": "",
+            "password": ""
+        }        
+    },
+    "api": {
+        "host": "localhost",
+        "port": 8080,
+        "token": ""
+    }    
 }

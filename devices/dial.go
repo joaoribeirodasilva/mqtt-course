@@ -55,10 +55,12 @@ func (d *Dial) Start() error {
 					d.broker.Subscribe()
 					d.Publish()
 					d.broker.Disconnect()
+				} else {
+					log.Printf("ERROR: [DIAL] MQTT failed to connect REASON: %s", err.Error())
 				}
 			}
 
-			if sig := wait_signals.SleepWait(time.Duration(d.conf.Communications.MQTT.Interval)*time.Millisecond, syscall.SIGINT, syscall.SIGTERM); sig != nil {
+			if sig := wait_signals.SleepWait(time.Duration(d.conf.MQTT.Interval)*time.Millisecond, syscall.SIGINT, syscall.SIGTERM); sig != nil {
 				break
 			}
 		}

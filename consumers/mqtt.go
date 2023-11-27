@@ -8,18 +8,20 @@ import (
 )
 
 type MQTTClient struct {
-	conf        *Configuration
-	mqttClient  mqtt.Client
-	mqttToken   mqtt.Token
-	isConnected bool
+	conf             *Configuration
+	mqttClient       mqtt.Client
+	mqttToken        mqtt.Token
+	onReceiveMessage mqtt.MessageHandler
+	isConnected      bool
 }
 
-func NewMQTTClient(conf *Configuration) *MQTTClient {
+func NewMQTTClient(conf *Configuration, onReceiveMessage mqtt.MessageHandler) *MQTTClient {
 
 	c := &MQTTClient{}
 
 	c.conf = conf
 	c.isConnected = false
+	c.onReceiveMessage = onReceiveMessage
 
 	return c
 }
@@ -69,11 +71,13 @@ func (c *MQTTClient) Connect() error {
 	return nil
 }
 
-func (c *MQTTClient) Subscribe() error {
+func (c *MQTTClient) Subscribe(verbose bool) error {
 
-	log.Printf("subscribing MQTT topic %s with QOS %d ...", c.conf.MQTT.Subscribe.Topic, c.conf.MQTT.Subscribe.Qos)
+	if verbose {
+		log.Printf("subscribing MQTT topic %s with QOS %d ...", c.conf.MQTT.Subscribe.Topic, c.conf.MQTT.Subscribe.Qos)
+	}
 
-	if c.mqttToken = c.mqttClient.Subscribe(c.conf.MQTT.Subscribe.Topic, c.conf.MQTT.Subscribe.Qos, c.onMessageReceived); c.mqttToken.Wait() && c.mqttToken.Error() != nil {
+	if c.mqttToken = c.mqttClient.Subscribe(c.conf.MQTT.Subscribe.Topic, c.conf.MQTT.Subscribe.Qos, c.onReceiveMessage); c.mqttToken.Wait() && c.mqttToken.Error() != nil {
 
 		return c.mqttToken.Error()
 	}
@@ -98,18 +102,6 @@ func (c *MQTTClient) Unsubscribe() error {
 }
 
 func (c *MQTTClient) Publish(data []byte) error {
-
-	// if !c.isConnected {
-
-	// 	if err := c.Connect(); err != nil {
-
-	// 		return err
-	// 	}
-	// }
-
-	// Get the list of stored metrics
-
-	//log.Printf("publishing MQTT message into topic %s with QOS %d ...", c.conf.Communications.MQTT.Publish.Topic, c.conf.Communications.MQTT.Publish.Qos)
 
 	if c.mqttToken = c.mqttClient.Publish(c.conf.MQTT.Publish.Topic, c.conf.MQTT.Publish.Qos, false, data); c.mqttToken.Wait() && c.mqttToken.Error() != nil {
 
@@ -148,11 +140,10 @@ func (c *MQTTClient) onConnectHandler(client mqtt.Client) {
 
 func (c *MQTTClient) onConnectLostHandler(client mqtt.Client, err error) {
 
+	log.Println("INFO: [MQTT CLIENT] MQTT Broker connection lost ")
 	c.isConnected = false
 }
 
-func (c *MQTTClient) onMessageReceived(client mqtt.Client, message mqtt.Message) {
+// func (c *MQTTClient) onMessageReceived(client mqtt.Client, message mqtt.Message) {
 
-	// Received message from the broker
-	// Switch for operation to perform
-}
+// }

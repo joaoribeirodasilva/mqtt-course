@@ -278,7 +278,7 @@ func (dl *DataList) Read() error {
 	// to the list
 	defer dl.mu.Unlock()
 
-	log.Printf("INFO: [LIST] saving data from file")
+	log.Printf("INFO: [LIST] reading data from file")
 
 	// read the JSON file into the a byte array
 	bytes, err := os.ReadFile(dl.conf.Data.Path)

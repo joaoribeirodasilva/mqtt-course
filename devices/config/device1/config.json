@@ -1,6 +1,4 @@
 {
-    "id": "655398410f3b5d4e935837a7",
-    "account": "",
     "clock": {
         "interval": 1000,
         "multiplier": 60
@@ -29,36 +27,39 @@
         "saveInterval": 1000,
         "maxMessages": 1000
     },
-    "communications": {
-        "certificates": {
-            "dir": "config/device1/",
-            "root": "ca.key",
-            "crt": "device.crt",
-            "key": "device.key"
+    "mqtt": {
+        "clientId": "655398410f3b5d4e935837a7",
+        "host": "localhost",
+        "port": 1883,
+        "interval": 1000,       
+        "publish": {
+            "topic": "mqttcourse/freezer",
+            "qos": 2,
+            "retain": false,
+            "disabled": false            
+        },
+        "subscribe": {
+            "topic": "mqttcourse/devices/1",
+            "qos": 2,
+            "retain": false,
+            "disabled": false
+        },
+        "tls": {
+            "use": false,
+            "insecure": true,
+            "root": "config/root.key",
+            "crt": "config/mqtt.crt",
+            "key": "config/mqtt.key"
         },
         "authentication": {
+            "use": true,
             "username": "",
             "password": ""
-        },
-        "mqtt": {
-            "host": "localhost",
-            "port": 1883,
-            "login": false,
-            "tls": false,        
-            "interval": 10000,
-            "publish": {
-                "topic": "mqttcourse/freezer",
-                "qos": 2
-            },
-            "subscribe": {
-                "topic": "mqttcourse/devices/",
-                "qos": 2
-            }
-        },
-        "api": {
-            "host": "localhost",
-            "port": 8080,
-            "token": ""
-        }
-    }
+        }        
+    },
+    "api": {
+        "host": "localhost",
+        "port": 8080,
+        "token": ""
+    }    
 }

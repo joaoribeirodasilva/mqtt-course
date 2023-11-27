@@ -1,0 +1,69 @@
+{
+    "mongodb": {
+        "clientId": "consumer1",
+        "uri": "mongodb://localhost:27017",
+        "database": "mqttcourse",
+        "username": "root",
+        "password": "53cr37",
+        "timeoutMS": 0,
+        "connectTimeoutMS": 30000,
+        "maxPoolSize": 100,
+        "replicaSet": null,
+        "maxIdleTimeMS": 0,
+        "minPoolSize": 0,
+        "socketTimeoutMS": 0,
+        "serverSelectionTimeoutMS": 30000,
+        "heartbeatFrequencyMS": 10000,
+        "tls" : {
+            "use": false,
+            "insecure": true,
+            "root": "config/root.pem",
+            "cert": "config/mongo.crt",
+            "key": "config/mongo.key"
+        },
+        "compressors": {
+            "snappy": false,
+            "zlib": false,
+            "zstd": false
+        },
+        "writeConcern": {
+            "w": 1,
+            "wTimeoutMS": 10000,
+            "journal": true
+        },
+        "readPreference": {
+            "readPreference": "primaryPreferred"
+        },
+        "directConnection": false
+    },
+    "mqtt": {
+        "clientId": "consumer1",
+        "host": "localhost",
+        "port": 1883,
+        "interval": 100,       
+        "publish": {
+            "topic": "mqttcourse/devices/",
+            "qos": 2,
+            "retain": false,
+            "disabled": false
+        },
+        "subscribe": {
+            "topic": "mqttcourse/freezer",
+            "qos": 2,
+            "retain": false,
+            "disabled": false            
+        },
+        "tls": {
+            "use": false,
+            "insecure": true,
+            "root": "config/root.key",
+            "crt": "config/mqtt.crt",
+            "key": "config/mqtt.key"
+        },
+        "authentication": {
+            "use": false,
+            "username": "root",
+            "password": "53cr37"
+        }        
+    }
+}

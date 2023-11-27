@@ -1,4 +1,4 @@
-package main
+package database
 
 import (
 	"context"
@@ -7,19 +7,22 @@ import (
 	"strings"
 	"time"
 
+	"github.com/joaoribeirodasilva/mqtt-course/api/configuration"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"go.mongodb.org/mongo-driver/mongo/writeconcern"
+
+	"github.com/joaoribeirodasilva/mqtt-course/api/tls"
 )
 
 type Database struct {
-	conf     *Configuration
+	conf     *configuration.Configuration
 	Client   *mongo.Client
 	Database *mongo.Database
 }
 
-func NewDatabase(conf *Configuration) *Database {
+func NewDatabase(conf *configuration.Configuration) *Database {
 
 	d := &Database{}
 
@@ -107,7 +110,7 @@ func (d *Database) Connect() error {
 	if d.conf.Mongo.Tls.Use {
 
 		// create the TLS configuration
-		tlsConf := NewTlsConfig(d.conf.Mongo.Tls.Crt, d.conf.Mongo.Tls.Key, d.conf.Mongo.Tls.Root, true)
+		tlsConf := tls.NewTlsConfig(d.conf.Mongo.Tls.Crt, d.conf.Mongo.Tls.Key, d.conf.Mongo.Tls.Root, true)
 		if err := tlsConf.Create(); err != nil {
 			return err
 		}
