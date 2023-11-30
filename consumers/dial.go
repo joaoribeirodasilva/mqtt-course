@@ -13,13 +13,21 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type Message struct {
+	DeviceID    string      `json:"deviceId"`
+	Sensors     interface{} `json:"sensors"`
+	CollectedAt time.Time   `json:"collectedAt"`
+}
+
 // TODO: Define the base message object
 type MetricsModel struct {
-	ID       primitive.ObjectID `json:"_id" bson:"_id"`
-	UserID   primitive.ObjectID `json:"userId" bson:"userId"`
-	Consumer string             `json:"consumer" bson:"consumer"`
-	Metrics  interface{}        `json:"metrics" bson:"metrics"`
-	Received time.Time          `json:"received" bson:"received"`
+	ID          primitive.ObjectID `json:"_id" bson:"_id"`
+	UserID      primitive.ObjectID `json:"userId" bson:"userId"`
+	DeviceID    string             `json:"deviceId"`
+	Consumer    string             `json:"consumer" bson:"consumer"`
+	Sensors     interface{}        `json:"sensors"`
+	CollectedAt time.Time          `json:"collectedAt"`
+	Received    time.Time          `json:"received" bson:"received"`
 }
 
 type Dial struct {
@@ -123,6 +131,8 @@ func (d *Dial) onMessageReceived(client mqtt.Client, message mqtt.Message) {
 
 	coll := d.db.GetCollection("metrics")
 
+	// TODO: Adap to new model
+
 	rec := MetricsModel{
 		Consumer: d.conf.Mongo.ClientID,
 		Metrics:  msgJson,
@@ -144,7 +154,7 @@ func (d *Dial) Publish() error {
 	return nil
 }
 
-// TODO: validate base message
+// TODO: validate base message device ID
 func (d *Dial) CheckValidDevice() bool {
 	return false
 }

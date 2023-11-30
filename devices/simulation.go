@@ -38,9 +38,6 @@ func NewSimulation(conf *Configuration, list *DataList) *Simulation {
 
 	s.currentStatus.Humidity.CurrentValue = conf.Sensors.Humidity.Normal
 
-	s.currentStatus.DeviceID = conf.MQTT.ClientID
-	s.currentStatus.CollectedAt = time.Now().UTC()
-
 	return s
 }
 
@@ -53,9 +50,6 @@ func (s *Simulation) Simulate(virtualTime time.Time) {
 	s.door(virtualTime)
 	s.temperature(virtualTime)
 	s.humidity(virtualTime)
-
-	s.currentStatus.DeviceID = s.conf.MQTT.ClientID
-	s.currentStatus.CollectedAt = time.Now().UTC()
 
 	// log.Printf("INFO: [SIMULATE] Door is open: %t\n", s.currentStatus.Door.IsOpen)
 	// if s.currentStatus.Door.OpenTime != nil {
@@ -75,7 +69,16 @@ func (s *Simulation) Simulate(virtualTime time.Time) {
 	// log.Printf("INFO: [SIMULATE] Temperature: %.2f\n", s.currentStatus.Temperature.CurrentValue)
 	// log.Printf("INFO: [SIMULATE] Humidity: %.2f\n", s.currentStatus.Humidity.CurrentValue)
 
-	s.statusList.Append(s.currentStatus)
+	// if the door sensor is marked as open
+	// we don't want to send the time the door
+	// is set to close
+
+	item := s.currentStatus
+	if item.Door.IsOpen {
+		item.Door.CloseTime = nil
+	}
+
+	s.statusList.Append(&item)
 
 }
 

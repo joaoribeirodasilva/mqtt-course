@@ -14,18 +14,22 @@ import (
 
 // TODO: define base message
 
+type Message struct {
+	DeviceID    string    `json:"deviceId"`
+	Sensors     Sensors   `json:"sensors"`
+	CollectedAt time.Time `json:"collectedAt"`
+}
+
 type Sensors struct {
-	DeviceID    string        `json:"deviceId"`
 	Door        SensorDoor    `json:"door"`
 	Temperature SensorNumeric `json:"temperature"`
 	Humidity    SensorNumeric `json:"humidity"`
-	CollectedAt time.Time     `json:"collectedAt"`
 }
 
 type DataList struct {
 	conf          *Configuration
 	mu            sync.Mutex
-	list          []*Sensors
+	list          []*Message
 	isStarted     bool
 	stopRequested bool
 	isDirty       bool
@@ -37,7 +41,7 @@ func NewDataList(conf *Configuration) *DataList {
 
 	dl := &DataList{}
 	dl.conf = conf
-	dl.list = make([]*Sensors, 0)
+	dl.list = make([]*Message, 0)
 	dl.isStarted = false
 	dl.stopRequested = false
 	dl.isDirty = false
@@ -135,7 +139,11 @@ func (dl *DataList) Stop() {
 }
 
 // Append ands a new Sensors struct to the DataList array
-func (dl *DataList) Append(item Sensors) {
+func (dl *DataList) Append(item *Sensors) {
+
+	if item == nil {
+		return
+	}
 
 	// lock the list so the thread inserting
 	// can have exclusive access
@@ -151,8 +159,14 @@ func (dl *DataList) Append(item Sensors) {
 		dl.list = dl.list[1:]
 	}
 
+	msg := Message{
+		DeviceID:    dl.conf.ID,
+		Sensors:     *item,
+		CollectedAt: time.Now().UTC(),
+	}
+
 	// add the item to the list
-	dl.list = append(dl.list, &item)
+	dl.list = append(dl.list, &msg)
 
 	// set is dirty flag to true so
 	// we know there are new items in
@@ -192,7 +206,7 @@ func (dl *DataList) Remove(items int) {
 }
 
 // GetHead returns a copy of the first list item
-func (dl *DataList) GetHead() *Sensors {
+func (dl *DataList) GetHead() *Message {
 
 	// lock the list so the thread inserting
 	// can have exclusive access
@@ -210,17 +224,10 @@ func (dl *DataList) GetHead() *Sensors {
 	// copy the sensor data item to a new
 	// memory address without deep copy
 	// that is processor intensive
-	s := &Sensors{
-		Door:        dl.list[0].Door,
-		Temperature: dl.list[0].Temperature,
-		Humidity:    dl.list[0].Humidity,
-	}
-
-	// if the door sensor is marked as open
-	// we don't want to send the time the door
-	// is set to close
-	if s.Door.IsOpen {
-		s.Door.CloseTime = nil
+	s := &Message{
+		DeviceID:    dl.list[0].DeviceID,
+		Sensors:     dl.list[0].Sensors,
+		CollectedAt: dl.list[0].CollectedAt,
 	}
 
 	// return the copied list item
