@@ -1,6 +1,6 @@
 {
     "mongodb": {
-        "clientId": "consumer2",
+        "clientId": "65690ad6d6083ad99c6dd9b1",
         "uri": "mongodb://localhost:27017",
         "database": "mqttcourse",
         "username": "",

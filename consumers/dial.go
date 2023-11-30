@@ -10,21 +10,32 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/joaoribeirodasilva/wait_signals"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type Device struct {
+	ID             primitive.ObjectID `json:"id" bson:"_id"`
+	UserID         primitive.ObjectID `json:"userId" bson:"userId"`
+	Name           string             `json:"name" bson:"name"`
+	LastMetricTime *time.Time         `json:"lastMetricTime" bson:"lastMetricTime"`
+	Active         bool               `json:"active" bson:"active"`
+	CreatedAt      time.Time          `json:"createdAt" bson:"createdAt"`
+	UpdatedAt      time.Time          `json:"updatedAt" bson:"updatedAt"`
+}
+
 type Message struct {
-	DeviceID    string      `json:"deviceId"`
-	Sensors     interface{} `json:"sensors"`
-	CollectedAt time.Time   `json:"collectedAt"`
+	DeviceID    primitive.ObjectID `json:"deviceId"`
+	Sensors     interface{}        `json:"sensors"`
+	CollectedAt time.Time          `json:"collectedAt"`
 }
 
 // TODO: Define the base message object
-type MetricsModel struct {
+type MessageModel struct {
 	ID          primitive.ObjectID `json:"_id" bson:"_id"`
 	UserID      primitive.ObjectID `json:"userId" bson:"userId"`
-	DeviceID    string             `json:"deviceId"`
-	Consumer    string             `json:"consumer" bson:"consumer"`
+	DeviceID    primitive.ObjectID `json:"deviceId"`
+	ConsumerID  primitive.ObjectID `json:"consumer" bson:"consumer"`
 	Sensors     interface{}        `json:"sensors"`
 	CollectedAt time.Time          `json:"collectedAt"`
 	Received    time.Time          `json:"received" bson:"received"`
@@ -120,7 +131,7 @@ func (d *Dial) Stop() {
 
 func (d *Dial) onMessageReceived(client mqtt.Client, message mqtt.Message) {
 
-	msgJson := make(map[string]interface{})
+	msgJson := Message{}
 
 	bytes := message.Payload()
 
@@ -129,19 +140,40 @@ func (d *Dial) onMessageReceived(client mqtt.Client, message mqtt.Message) {
 		return
 	}
 
-	coll := d.db.GetCollection("metrics")
+	collDevices := d.db.GetCollection("metrics")
 
-	// TODO: Adap to new model
+	device := &Device{}
 
-	rec := MetricsModel{
-		Consumer: d.conf.Mongo.ClientID,
-		Metrics:  msgJson,
-		Received: time.Now(),
+	err := collDevices.FindOne(context.TODO(), bson.D{{Key: "_id", Value: msgJson.DeviceID}, {Key: "active", Value: true}}).Decode(device)
+	if err != nil || device.UserID.IsZero() {
+		log.Printf("ERROR: [DIAL] failed to search for device REASON: %v\n", err)
+		return
 	}
 
-	_, err := coll.InsertOne(context.TODO(), rec)
+	coll := d.db.GetCollection("metrics")
+
+	rec := MessageModel{
+		ID:         primitive.NewObjectID(),
+		UserID:     device.UserID,
+		DeviceID:   msgJson.DeviceID,
+		ConsumerID: d.conf.Mongo.ClientID,
+		Sensors:    msgJson.Sensors,
+		Received:   time.Now(),
+	}
+
+	_, err = coll.InsertOne(context.TODO(), rec)
 	if err != nil {
 		log.Printf("ERROR: [DIAL] failed to save message into database REASON: %v\n", err)
+		return
+	}
+
+	now := time.Now().UTC()
+	device.LastMetricTime = &now
+
+	_, err = collDevices.UpdateOne(context.TODO(), bson.D{{Key: "_id", Value: device.ID}}, bson.D{{Key: "$set", Value: device}})
+	if err != nil {
+		log.Printf("ERROR: [DIAL] failed to update device last message time REASON: %v\n", err)
+		return
 	}
 
 	if d.conf.Options.debug {
@@ -152,9 +184,4 @@ func (d *Dial) onMessageReceived(client mqtt.Client, message mqtt.Message) {
 func (d *Dial) Publish() error {
 
 	return nil
-}
-
-// TODO: validate base message device ID
-func (d *Dial) CheckValidDevice() bool {
-	return false
 }

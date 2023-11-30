@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type TLSConf struct {
@@ -31,7 +33,7 @@ type MongoReadPreferenceConf struct {
 }
 
 type MongoConf struct {
-	ClientID                 string                  `json:"clientId"`
+	ClientID                 primitive.ObjectID      `json:"clientId"`
 	Uri                      string                  `json:"uri"`
 	Database                 string                  `json:"database"`
 	Username                 string                  `json:"username"`
