@@ -56,7 +56,9 @@ func (vc *VirtualClock) Start() error {
 
 		}
 
-		log.Println("INFO: [VIRTUAL CLOCK] virtual clock requested ro stop")
+		if vc.conf.Options.debug {
+			log.Println("INFO: [VIRTUAL CLOCK] virtual clock requested to stop")
+		}
 		vc.isStarted = false
 		vc.stopRequested = false
 
@@ -73,13 +75,15 @@ func (vc *VirtualClock) Stop() {
 
 	if vc.isStarted {
 
-		log.Println("INFO: [VIRTUAL CLOCK] virtual clock stop requested")
+		if vc.conf.Options.debug {
+			log.Println("INFO: [VIRTUAL CLOCK] virtual clock stop requested")
+		}
 
 		vc.stopRequested = true
 
 		<-vc.finished
 
-		log.Println("INFO: [VIRTUAL CLOCK] virtual clock stopped... waiting")
+		log.Println("INFO: [VIRTUAL CLOCK] virtual clock stopped")
 	}
 }
 

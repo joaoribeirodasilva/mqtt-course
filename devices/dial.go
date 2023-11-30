@@ -65,7 +65,9 @@ func (d *Dial) Start() error {
 			}
 		}
 
-		log.Println("INFO: [DIAL] MQTT dial stopping")
+		if d.conf.Options.debug {
+			log.Println("INFO: [DIAL] MQTT dial stopping")
+		}
 
 		if err := d.broker.Connect(); err == nil {
 			d.Publish()
@@ -89,7 +91,9 @@ func (d *Dial) Stop() {
 
 	if d.isStarted {
 
-		log.Println("INFO: [DIAL] MQTT dial requested to stop... waiting")
+		if d.conf.Options.debug {
+			log.Println("INFO: [DIAL] MQTT dial requested to stop... waiting")
+		}
 
 		d.stopRequested = true
 
@@ -131,7 +135,9 @@ func (d *Dial) Publish() error {
 		messageCount++
 	}
 
-	log.Printf("INFO: [DIAL] published %d messages", messageCount)
+	if d.conf.Options.debug {
+		log.Printf("INFO: [DIAL] published %d messages", messageCount)
+	}
 
 	return nil
 }

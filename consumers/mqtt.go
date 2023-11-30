@@ -73,7 +73,7 @@ func (c *MQTTClient) Connect() error {
 
 func (c *MQTTClient) Subscribe(verbose bool) error {
 
-	if verbose {
+	if c.conf.Options.debug {
 		log.Printf("subscribing MQTT topic %s with QOS %d ...", c.conf.MQTT.Subscribe.Topic, c.conf.MQTT.Subscribe.Qos)
 	}
 
@@ -89,7 +89,9 @@ func (c *MQTTClient) Subscribe(verbose bool) error {
 
 func (c *MQTTClient) Unsubscribe() error {
 
-	log.Printf("unsubscribing from MQTT topic %s  ...", c.conf.MQTT.Subscribe.Topic)
+	if c.conf.Options.debug {
+		log.Printf("unsubscribing from MQTT topic %s  ...", c.conf.MQTT.Subscribe.Topic)
+	}
 
 	if c.mqttToken = c.mqttClient.Unsubscribe(c.conf.MQTT.Subscribe.Topic); c.mqttToken.Wait() && c.mqttToken.Error() != nil {
 
@@ -134,13 +136,17 @@ func (c *MQTTClient) onMessagePublishedHandler(client mqtt.Client, msg mqtt.Mess
 
 func (c *MQTTClient) onConnectHandler(client mqtt.Client) {
 
-	log.Println("INFO: [MQTT CLIENT] connected to MQTT Broker")
+	if c.conf.Options.debug {
+		log.Println("INFO: [MQTT CLIENT] connected to MQTT Broker")
+	}
 	c.isConnected = true
 }
 
 func (c *MQTTClient) onConnectLostHandler(client mqtt.Client, err error) {
 
-	log.Println("INFO: [MQTT CLIENT] MQTT Broker connection lost ")
+	if c.conf.Options.debug {
+		log.Println("INFO: [MQTT CLIENT] MQTT Broker connection lost ")
+	}
 	c.isConnected = false
 }
 

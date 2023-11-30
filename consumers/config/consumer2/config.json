@@ -40,7 +40,7 @@
         "clientId": "consumer2",
         "host": "localhost",
         "port": 1883,
-        "interval": 100,       
+        "interval": 100,     
         "publish": {
             "topic": "mqttcourse/devices/",
             "qos": 2,

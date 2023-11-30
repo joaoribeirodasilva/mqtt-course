@@ -31,7 +31,7 @@
         "clientId": "655398410f3b5d4e935837a7",
         "host": "localhost",
         "port": 1883,
-        "interval": 1000,       
+        "interval": 1000,     
         "publish": {
             "topic": "mqttcourse/freezer",
             "qos": 2,

@@ -12,10 +12,14 @@ import (
 	"github.com/joaoribeirodasilva/wait_signals"
 )
 
+// TODO: define base message
+
 type Sensors struct {
+	DeviceID    string        `json:"deviceId"`
 	Door        SensorDoor    `json:"door"`
 	Temperature SensorNumeric `json:"temperature"`
 	Humidity    SensorNumeric `json:"humidity"`
+	CollectedAt time.Time     `json:"collectedAt"`
 }
 
 type DataList struct {
@@ -77,10 +81,14 @@ func (dl *DataList) Start() error {
 				break
 			}
 
-			log.Printf("INFO: [LIST] buffer has %d messages stored\n", dl.Len())
+			if dl.conf.Options.debug {
+				log.Printf("INFO: [LIST] buffer has %d messages stored\n", dl.Len())
+			}
 		}
 
-		log.Println("INFO: [LIST] data list stopping")
+		if dl.conf.Options.debug {
+			log.Println("INFO: [LIST] data list stopping")
+		}
 		// here the stop request flag was set
 		// flag it as not started
 		dl.isStarted = false
@@ -110,7 +118,9 @@ func (dl *DataList) Stop() {
 	// if it's started
 	if dl.isStarted {
 
-		log.Println("INFO: [LIST] data list stop requested... waiting")
+		if dl.conf.Options.debug {
+			log.Println("INFO: [LIST] data list stop requested... waiting")
+		}
 
 		// create a channel to wait for the thread to terminate
 
@@ -256,7 +266,9 @@ func (dl *DataList) Save() error {
 		return err
 	}
 
-	log.Printf("INFO: [LIST] saving data to file")
+	if dl.conf.Options.debug {
+		log.Printf("INFO: [LIST] saving data to file")
+	}
 
 	// write this JSON byte array to a data file
 	err = os.WriteFile(dl.conf.Data.Path, data, os.ModePerm)
@@ -278,7 +290,9 @@ func (dl *DataList) Read() error {
 	// to the list
 	defer dl.mu.Unlock()
 
-	log.Printf("INFO: [LIST] reading data from file")
+	if dl.conf.Options.debug {
+		log.Printf("INFO: [LIST] reading data from file")
+	}
 
 	// read the JSON file into the a byte array
 	bytes, err := os.ReadFile(dl.conf.Data.Path)

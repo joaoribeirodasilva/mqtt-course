@@ -12,6 +12,7 @@ import (
 
 type Options struct {
 	consumer    int
+	debug       bool
 	subscribe   bool
 	unsubscribe bool
 	help        bool
@@ -88,6 +89,7 @@ func cmdOptions() *Options {
 	opts := &Options{}
 
 	flag.IntVar(&opts.consumer, "c", 1, "consumer number")
+	flag.BoolVar(&opts.debug, "debug", false, "prints debug information while running")
 	flag.BoolVar(&opts.subscribe, "s", false, "should subscribe topic on startup")
 	flag.BoolVar(&opts.unsubscribe, "u", false, "should unsubscribe topic on startup")
 	flag.BoolVar(&opts.help, "h", false, "print this help")

@@ -3,10 +3,9 @@ package controllers
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joaoribeirodasilva/mqtt-course/api/configuration"
-	"github.com/joaoribeirodasilva/mqtt-course/api/database"
 	"github.com/joaoribeirodasilva/mqtt-course/api/password"
 	"github.com/joaoribeirodasilva/mqtt-course/api/token"
 	"go.mongodb.org/mongo-driver/bson"
@@ -14,31 +13,24 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type User struct {
-	ID        primitive.ObjectID `json:"id" bson:"id"`
-	AccountID primitive.ObjectID `json:"accountId" bson:"accountId"`
-	Email     string             `json:"email" bson:"email"`
-	Password  string             `json:"_" bson:"password"`
-	Name      string             `json:"name" bson:"name"`
-	Surename  string             `json:"surename" bson:"surename"`
-	Active    bool               `json:"active" bson:"active"`
+type Session struct {
+	ID        primitive.ObjectID `json:"_id" bson:"_id"`
+	UserID    primitive.ObjectID `json:"userId" bson:"userId"`
+	StartTime time.Time          `json:"startTime" bson:"startTime"`
+	EndTime   *time.Time         `json:"endTime" bson:"endTime"`
+	CreatedAt time.Time          `json:"createdAt" bson:"createdAt"`
+	UpdatedAt time.Time          `json:"updatedAt" bson:"updatedAt"`
 }
 
+// Login
 func Login(c *gin.Context) {
 
-	defer func() {
-		if err := recover(); err != nil {
-			c.AbortWithStatus(http.StatusInternalServerError)
-		}
-	}()
+	ptrs, err := mustGetAll(c)
+	if err != nil {
+		return
+	}
 
-	tempConf := c.MustGet("conf")
-	conf := tempConf.(*configuration.Configuration)
-
-	d := c.MustGet("db")
-	db := d.(*database.Database)
-
-	collUsers := db.GetCollection("users")
+	collUsers := ptrs.Db.GetCollection("users")
 
 	username, passwd, ok := c.Request.BasicAuth()
 	if !ok {
@@ -48,12 +40,13 @@ func Login(c *gin.Context) {
 
 	user := User{}
 
-	err := collUsers.FindOne(context.TODO(), bson.M{"email": username}).Decode(&user)
+	err = collUsers.FindOne(context.TODO(), bson.M{"email": username}).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}
+
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -68,11 +61,10 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	auth := token.New(conf)
+	auth := token.New(ptrs.Conf)
 
 	tokenUser := &token.User{
-		ID:       user.ID.Hex(),
-		Account:  user.AccountID.Hex(),
+		ID:       user.ID,
 		Name:     user.Name,
 		Surename: user.Surename,
 	}
@@ -82,34 +74,61 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	collSessions := ptrs.Db.GetCollection("sessions")
+
+	now := time.Now().UTC()
+
+	session := Session{
+		ID:        primitive.NewObjectID(),
+		UserID:    user.ID,
+		StartTime: now,
+		EndTime:   nil,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	_, err = collSessions.InsertOne(context.TODO(), &session)
+	if err != nil {
+		// fmt.Printf("ERROR: %+v\n", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
 	c.JSON(http.StatusOK, map[string]string{"token": auth.TokenString})
 }
 
-func Signup(c *gin.Context) {
-
-	c.Status(http.StatusOK)
-}
-
+// Logout
 func Logout(c *gin.Context) {
 
-	// tempConf := c.MustGet("conf")
-	// conf := tempConf.(*configuration.Configuration)
+	ptrs, err := mustGetAll(c)
+	if err != nil {
+		return
+	}
 
-	d := c.MustGet("db")
-	db := d.(*database.Database)
-	db.GetCollection("metrics")
+	collSessions := ptrs.Db.GetCollection("sessions")
 
-	c.Status(http.StatusOK)
-}
+	session := Session{}
 
-func MetricsGet(c *gin.Context) {
+	err = collSessions.FindOne(context.TODO(), bson.D{{Key: "userId", Value: ptrs.User.ID}, {Key: "endTime", Value: nil}}).Decode(&session)
+	if err != nil && err != mongo.ErrNoDocuments {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	} else if err == mongo.ErrNoDocuments {
+		c.Status(http.StatusOK)
+		return
+	}
 
-	// tempConf := c.MustGet("conf")
-	// conf := tempConf.(*configuration.Configuration)
+	filter := bson.D{{Key: "_id", Value: session.ID}}
 
-	d := c.MustGet("db")
-	db := d.(*database.Database)
-	db.GetCollection("metrics")
+	now := time.Now().UTC()
+	session.EndTime = &now
+	session.UpdatedAt = now
+
+	_, err = collSessions.UpdateOne(context.TODO(), filter, bson.D{{Key: "$set", Value: session}})
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
 
 	c.Status(http.StatusOK)
 }

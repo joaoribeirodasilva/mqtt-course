@@ -7,13 +7,14 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/joaoribeirodasilva/mqtt-course/api/configuration"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type User struct {
-	ID       string
-	Account  string
+	ID       primitive.ObjectID
 	Name     string
 	Surename string
+	Admin    bool
 }
 
 type Token struct {
@@ -43,10 +44,10 @@ func (t *Token) Create(user *User) error {
 	expires := now.Add(time.Duration(time.Hour * 24 * 30))
 
 	sub := make(map[string]interface{})
-	sub["id"] = user.ID
-	sub["account"] = user.Account
+	sub["id"] = user.ID.Hex()
 	sub["name"] = user.Name
 	sub["surename"] = user.Surename
+	sub["admin"] = user.Admin
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"iss": iss,
@@ -78,7 +79,7 @@ func (t *Token) IsValid(header string) bool {
 		return false
 	}
 
-	if jwtToken[0] != "Baerer" {
+	if jwtToken[0] != "Bearer" {
 		return false
 	}
 
@@ -102,12 +103,10 @@ func (t *Token) IsValid(header string) bool {
 		return false
 	}
 	id := iid.(string)
-
-	iaccount, ok := sub["account"]
-	if !ok {
+	mid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
 		return false
 	}
-	account := iaccount.(string)
 
 	iname, ok := sub["name"]
 	if !ok {
@@ -121,11 +120,17 @@ func (t *Token) IsValid(header string) bool {
 	}
 	surename := isurename.(string)
 
+	iadmin, ok := sub["admin"]
+	if !ok {
+		return false
+	}
+	admin := iadmin.(bool)
+
 	t.User = &User{
-		ID:       id,
-		Account:  account,
+		ID:       mid,
 		Name:     name,
 		Surename: surename,
+		Admin:    admin,
 	}
 
 	return true

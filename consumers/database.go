@@ -119,7 +119,9 @@ func (d *Database) Connect() error {
 	// apply the url
 	clientOpts.ApplyURI(d.conf.Mongo.Uri)
 
-	log.Printf("INFO: [DATABASE] connecting to Mongo DB server at %s\n", d.conf.Mongo.Uri)
+	if d.conf.Options.debug {
+		log.Printf("INFO: [DATABASE] connecting to Mongo DB server at %s\n", d.conf.Mongo.Uri)
+	}
 
 	var err error
 

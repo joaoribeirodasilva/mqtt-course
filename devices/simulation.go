@@ -7,15 +7,13 @@ import (
 )
 
 type SensorDoor struct {
-	OpenTime     *time.Time `json:"OpenTime"`
-	CloseTime    *time.Time `json:"CloseTime"`
-	IsOpen       bool       `json:"IsOpen"`
-	RecordedTime time.Time  `json:"RecordedTime"`
+	OpenTime  *time.Time `json:"OpenTime"`
+	CloseTime *time.Time `json:"CloseTime"`
+	IsOpen    bool       `json:"IsOpen"`
 }
 
 type SensorNumeric struct {
-	CurrentValue float64   `json:"CurrentValue"`
-	RecordedTime time.Time `json:"RecordedTime"`
+	CurrentValue float64 `json:"CurrentValue"`
 }
 
 type Simulation struct {
@@ -34,14 +32,14 @@ func NewSimulation(conf *Configuration, list *DataList) *Simulation {
 
 	s.currentStatus.Door.OpenTime = nil
 	s.currentStatus.Door.CloseTime = nil
-	s.currentStatus.Door.RecordedTime = time.Now()
 	s.currentStatus.Door.IsOpen = false
 
 	s.currentStatus.Temperature.CurrentValue = conf.Sensors.Temperature.Normal
-	s.currentStatus.Temperature.RecordedTime = time.Now()
 
 	s.currentStatus.Humidity.CurrentValue = conf.Sensors.Humidity.Normal
-	s.currentStatus.Humidity.RecordedTime = time.Now()
+
+	s.currentStatus.DeviceID = conf.MQTT.ClientID
+	s.currentStatus.CollectedAt = time.Now().UTC()
 
 	return s
 }
@@ -55,6 +53,9 @@ func (s *Simulation) Simulate(virtualTime time.Time) {
 	s.door(virtualTime)
 	s.temperature(virtualTime)
 	s.humidity(virtualTime)
+
+	s.currentStatus.DeviceID = s.conf.MQTT.ClientID
+	s.currentStatus.CollectedAt = time.Now().UTC()
 
 	// log.Printf("INFO: [SIMULATE] Door is open: %t\n", s.currentStatus.Door.IsOpen)
 	// if s.currentStatus.Door.OpenTime != nil {
@@ -93,7 +94,9 @@ func (s *Simulation) door(virtualTime time.Time) {
 			// if the door opens then calculate the amount of time it will remain open
 			randomTimeOpen := rand.Int63n(s.conf.Sensors.DoorOpen.MaxTime-s.conf.Sensors.DoorOpen.MinTime) + s.conf.Sensors.DoorOpen.MinTime
 
-			log.Printf("INFO: [SIMULATE] door will be open for %d milliseconds", randomTimeOpen)
+			if s.conf.Options.debug {
+				log.Printf("INFO: [SIMULATE] door will be open for %d milliseconds", randomTimeOpen)
+			}
 
 			calculatedClose := virtualTime.Add(time.Duration(randomTimeOpen) * time.Millisecond)
 
@@ -119,8 +122,6 @@ func (s *Simulation) door(virtualTime time.Time) {
 		s.currentStatus.Door.OpenTime = nil
 	}
 
-	// get the current metric time
-	s.currentStatus.Door.RecordedTime = virtualTime
 }
 
 func (s *Simulation) temperature(virtualTime time.Time) {
@@ -147,7 +148,6 @@ func (s *Simulation) temperature(virtualTime time.Time) {
 		}
 	}
 
-	s.currentStatus.Temperature.RecordedTime = virtualTime
 }
 
 func (s *Simulation) humidity(virtualTime time.Time) {
@@ -174,5 +174,4 @@ func (s *Simulation) humidity(virtualTime time.Time) {
 		}
 	}
 
-	s.currentStatus.Humidity.RecordedTime = virtualTime
 }

@@ -11,6 +11,7 @@ import (
 
 type Options struct {
 	device      int
+	debug       bool
 	subscribe   bool
 	unsubscribe bool
 	configFile  string
@@ -99,6 +100,7 @@ func cmdOptions() *Options {
 
 	flag.StringVar(&opts.configFile, "c", "", "configuration file path")
 	flag.IntVar(&opts.device, "d", 0, "device number [1-3]")
+	flag.BoolVar(&opts.debug, "debug", false, "prints debug information while running")
 	flag.BoolVar(&opts.help, "h", false, "help")
 	flag.BoolVar(&opts.noTls, "no-tls", false, "don't use tls certificates")
 	flag.IntVar(&opts.qos, "q", 2, "MQTT QOS level")

@@ -13,8 +13,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// TODO: Define the base message object
 type MetricsModel struct {
-	ID       primitive.ObjectID `json:"id" bson:"ID"`
+	ID       primitive.ObjectID `json:"_id" bson:"_id"`
+	UserID   primitive.ObjectID `json:"userId" bson:"userId"`
 	Consumer string             `json:"consumer" bson:"consumer"`
 	Metrics  interface{}        `json:"metrics" bson:"metrics"`
 	Received time.Time          `json:"received" bson:"received"`
@@ -79,7 +81,9 @@ func (d *Dial) Start() error {
 
 		d.broker.Disconnect()
 
-		log.Println("INFO: [DIAL] MQTT dial stopping")
+		if d.conf.Options.debug {
+			log.Println("INFO: [DIAL] MQTT dial stopping")
+		}
 
 		d.isStarted = false
 		d.stopRequested = false
@@ -94,8 +98,9 @@ func (d *Dial) Start() error {
 func (d *Dial) Stop() {
 
 	if d.isStarted {
-
-		log.Println("INFO: [DIAL] MQTT dial requested to stop... waiting")
+		if d.conf.Options.debug {
+			log.Println("INFO: [DIAL] MQTT dial requested to stop... waiting")
+		}
 
 		d.stopRequested = true
 
@@ -119,7 +124,6 @@ func (d *Dial) onMessageReceived(client mqtt.Client, message mqtt.Message) {
 	coll := d.db.GetCollection("metrics")
 
 	rec := MetricsModel{
-		ID:       primitive.NewObjectID(),
 		Consumer: d.conf.Mongo.ClientID,
 		Metrics:  msgJson,
 		Received: time.Now(),
@@ -130,10 +134,17 @@ func (d *Dial) onMessageReceived(client mqtt.Client, message mqtt.Message) {
 		log.Printf("ERROR: [DIAL] failed to save message into database REASON: %v\n", err)
 	}
 
-	fmt.Printf("INFO: [DIAL] received message\n ")
+	if d.conf.Options.debug {
+		fmt.Printf("INFO: [DIAL] received message\n ")
+	}
 }
 
 func (d *Dial) Publish() error {
 
 	return nil
+}
+
+// TODO: validate base message
+func (d *Dial) CheckValidDevice() bool {
+	return false
 }

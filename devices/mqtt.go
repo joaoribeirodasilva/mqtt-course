@@ -71,7 +71,9 @@ func (c *MQTTClient) Connect() error {
 
 func (c *MQTTClient) Subscribe() error {
 
-	log.Printf("subscribing MQTT topic %s with QOS %d ...", c.conf.MQTT.Subscribe.Topic, c.conf.MQTT.Subscribe.Qos)
+	if c.conf.Options.debug {
+		log.Printf("subscribing MQTT topic %s with QOS %d ...", c.conf.MQTT.Subscribe.Topic, c.conf.MQTT.Subscribe.Qos)
+	}
 
 	if c.mqttToken = c.mqttClient.Subscribe(c.conf.MQTT.Subscribe.Topic, c.conf.MQTT.Subscribe.Qos, c.onMessageReceived); c.mqttToken.Wait() && c.mqttToken.Error() != nil {
 
@@ -85,7 +87,9 @@ func (c *MQTTClient) Subscribe() error {
 
 func (c *MQTTClient) Unsubscribe() error {
 
-	log.Printf("unsubscribing from MQTT topic %s  ...", c.conf.MQTT.Subscribe.Topic)
+	if c.conf.Options.debug {
+		log.Printf("unsubscribing from MQTT topic %s  ...", c.conf.MQTT.Subscribe.Topic)
+	}
 
 	if c.mqttToken = c.mqttClient.Unsubscribe(c.conf.MQTT.Subscribe.Topic); c.mqttToken.Wait() && c.mqttToken.Error() != nil {
 
@@ -125,7 +129,9 @@ func (c *MQTTClient) Disconnect() {
 
 	if c.isConnected {
 		c.mqttClient.Disconnect(250)
-		log.Println("INFO: [MQTT CLIENT] disconnected from MQTT Broker")
+		if c.conf.Options.debug {
+			log.Println("INFO: [MQTT CLIENT] disconnected from MQTT Broker")
+		}
 		c.isConnected = false
 	}
 }
@@ -142,7 +148,9 @@ func (c *MQTTClient) onMessagePublishedHandler(client mqtt.Client, msg mqtt.Mess
 
 func (c *MQTTClient) onConnectHandler(client mqtt.Client) {
 
-	log.Println("INFO: [MQTT CLIENT] connected to MQTT Broker")
+	if c.conf.Options.debug {
+		log.Println("INFO: [MQTT CLIENT] connected to MQTT Broker")
+	}
 	c.isConnected = true
 }
 
